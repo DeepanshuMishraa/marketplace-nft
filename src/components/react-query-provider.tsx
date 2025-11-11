@@ -1,4 +1,3 @@
-// Taken from https://tanstack.com/query/5/docs/framework/react/guides/advanced-ssr
 'use client'
 
 import { isServer, QueryClient, QueryClientProvider } from '@tanstack/react-query'
