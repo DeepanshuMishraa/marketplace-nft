@@ -3,6 +3,7 @@
 import { motion } from 'motion/react'
 import { ArrowRight, TrendingUp, Users, Zap } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 const featuredArtworks = [
   {
@@ -69,13 +70,17 @@ export function Hero() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4 mb-16">
-                <button className="group px-8 py-3 bg-foreground text-background hover:bg-foreground/90 transition-all flex items-center gap-2">
-                  Start Exploring
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </button>
-                <button className="px-8 py-3 border border-border hover:border-foreground transition-colors">
-                  Create & Sell
-                </button>
+                <Link prefetch href="/explore">
+                  <button className="group px-8 py-3 bg-foreground text-background hover:bg-foreground/90 transition-all flex items-center gap-2">
+                    Start Exploring
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </Link>
+                <Link prefetch href="/create">
+                  <button className="px-8 py-3 border border-border hover:border-foreground transition-colors">
+                    Create & Sell
+                  </button>
+                </Link>
               </div>
               <div className="grid grid-cols-3 gap-8 border-t border-border pt-8">
                 {stats.map((stat, index) => (
