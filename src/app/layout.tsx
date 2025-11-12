@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Appbar } from '@/components/Appbar'
 import { SolanaProvider } from '@/components/solana/solana-provider'
 import { ClusterProvider } from '@/components/cluster-data-access'
+import { Toaster } from '@/components/ui/sonner'
 
 export const metadata: Metadata = {
   title: 'Marketplacenft',
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </SolanaProvider>
             </ClusterProvider>
           </ReactQueryProvider>
+          <Toaster richColors />
         </ThemeProvider>
       </body>
     </html>
