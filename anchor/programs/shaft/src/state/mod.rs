@@ -4,8 +4,7 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct Escrow {
     pub maker: Pubkey,
-    pub mint_a: Pubkey,
-    pub mint_b: Pubkey,
-    pub receive: u64,
+    pub mint_nft: Pubkey,
+    pub price: u64,
     pub bump: u8,
 }
