@@ -11,7 +11,7 @@ pub struct Buy<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
     #[account(mut)]
-    pub maker: AccountInfo<'info>,
+    pub maker: SystemAccount<'info>,
     #[account(mint::token_program = token_program)]
     pub mint_nft: InterfaceAccount<'info, Mint>,
     #[account(
