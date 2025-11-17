@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "ES2020",
     "types": ["jest", "node"],
     "typeRoots": ["./node_modules/@types"],
     "lib": ["es2015"],
@@ -9,5 +9,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
-  }
+  },
+  "include": ["tests/**/*", "src/**/*"],
+  "exclude": ["target"]
 }
