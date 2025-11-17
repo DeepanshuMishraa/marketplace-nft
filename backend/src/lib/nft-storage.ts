@@ -1,75 +1,67 @@
-import AWS from "aws-sdk";
-import { randomUUID } from "crypto";
+import AWS from 'aws-sdk'
+import { randomUUID } from 'crypto'
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.ACCESS_ID!,
   secretAccessKey: process.env.S3_KEY!,
-  endpoint: "https://s3.filebase.com",
-  region: "us-east-1",
-  signatureVersion: "v4",
-});
+  endpoint: 'https://s3.filebase.com',
+  region: 'us-east-1',
+  signatureVersion: 'v4',
+})
 
-const BUCKET = process.env.S3_BUCKET!;
+const BUCKET = process.env.S3_BUCKET!
 
 export async function uploadImageToS3(file: File) {
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
 
-  const fileExt = file.name.split(".").pop() || "png";
-  const key = `nft-images/${randomUUID()}.${fileExt}`;
+  const fileExt = file.name.split('.').pop() || 'png'
+  const key = `nft-images/${randomUUID()}.${fileExt}`
 
   const params = {
     Bucket: BUCKET,
     Key: key,
     Body: buffer,
-    ContentType: file.type || "image/png",
-    ACL: "public-read",
-  };
+    ContentType: file.type || 'image/png',
+    ACL: 'public-read',
+  }
 
-  await s3.putObject(params).promise();
+  await s3.putObject(params).promise()
 
-  return `https://s3.filebase.com/${BUCKET}/${key}`;
+  return `https://s3.filebase.com/${BUCKET}/${key}`
 }
 
 export async function uploadMetadataToS3(metadata: any) {
-  const key = `nft-metadata/${randomUUID()}.json`;
+  const key = `nft-metadata/${randomUUID()}.json`
 
   const params = {
     Bucket: BUCKET,
     Key: key,
     Body: JSON.stringify(metadata),
-    ContentType: "application/json",
-    ACL: "public-read",
-  };
+    ContentType: 'application/json',
+    ACL: 'public-read',
+  }
 
-  await s3.putObject(params).promise();
+  await s3.putObject(params).promise()
 
-  return `https://s3.filebase.com/${BUCKET}/${key}`;
+  return `https://s3.filebase.com/${BUCKET}/${key}`
 }
 
-export async function uploadNFTAssetsToS3(
-  file: File,
-  name: string,
-  description: string,
-  traits: any[]
-) {
-  const imageUrl = await uploadImageToS3(file);
+export async function uploadNFTAssetsToS3(file: File, name: string, description: string, symbol: string) {
+  const imageUrl = await uploadImageToS3(file)
 
   const metadata = {
     name,
     description,
     image: imageUrl,
-    attributes: traits?.map((t: any) => ({
-      trait_type: t.type,
-      value: t.value,
-    })),
-  };
-  
-  const metadataUrl = await uploadMetadataToS3(metadata);
+    symbol,
+  }
+
+  const metadataUrl = await uploadMetadataToS3(metadata)
 
   return {
     imageUrl,
     metadataUrl,
     metadata,
-  };
+  }
 }
