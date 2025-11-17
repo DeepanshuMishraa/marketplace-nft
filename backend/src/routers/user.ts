@@ -48,22 +48,3 @@ userRouter.post('/connect', async (req, res) => {
   }
 })
 
-userRouter.post('/webhook', async (req, res) => {
-  const data = req.body
-
-  if (!Array.isArray(data)) {
-    console.error('Invalid webhook payload')
-    return res.status(400).json({ error: 'Invalid payload' })
-  }
-  
-  for(const event of data){
-    if (event.type === "PROGRAM_INVOKE" && event.programId === process.env.PROGRAM_ID) {
-      console.log("Program invoked:", event);
-      const ix = event.instructions?.[0];
-      if (!ix) continue;
-
-      const decoded = Buffer.from(ix.data, "base64").toString("hex");
-      console.log("Decoded IX Data:", decoded);
-    }
-  }
-})
