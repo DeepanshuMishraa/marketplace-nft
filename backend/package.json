@@ -17,9 +17,11 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@metaplex-foundation/umi-signer-wallet-adapters": "^1.4.1",
     "@prisma/client": "^6.19.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
+    "aws-sdk": "^2.1692.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "prisma": "^6.19.0",
