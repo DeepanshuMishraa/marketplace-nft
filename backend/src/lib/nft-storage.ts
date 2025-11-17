@@ -10,40 +10,68 @@ const s3 = new AWS.S3({
 })
 
 const BUCKET = process.env.S3_BUCKET!
+const GATEWAY_URL = process.env.FILEBASE_GATEWAY_URL || 'https://spiritual-peach-trout.myfilebase.com'
+
+async function getCIDFromKey(key: string): Promise<string> {
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  
+  const headResult = await s3.headObject({ Bucket: BUCKET, Key: key }).promise()
+  
+  if (headResult.Metadata && headResult.Metadata['cid']) {
+    return headResult.Metadata['cid']
+  }
+  
+  const listResult = await s3.listObjectsV2({
+    Bucket: BUCKET,
+    Prefix: key,
+    MaxKeys: 1,
+  }).promise()
+
+  if (listResult.Contents && listResult.Contents.length > 0) {
+    const obj = listResult.Contents[0]
+    if (obj?.ETag) {
+      return obj.ETag.replace(/"/g, '')
+    }
+  }
+  
+  throw new Error('Could not retrieve CID from uploaded file')
+}
 
 export async function uploadImageToS3(file: Express.Multer.File) {
   const buffer = file.buffer
 
   const fileExt = file.originalname.split('.').pop() || 'png'
-  const key = `nft-images/${randomUUID()}.${fileExt}`
+  const key = `${randomUUID()}.${fileExt}`
 
   const params = {
     Bucket: BUCKET,
     Key: key,
     Body: buffer,
     ContentType: file.mimetype || 'image/png',
-    ACL: 'public-read',
   }
 
   await s3.putObject(params).promise()
 
-  return `https://s3.filebase.com/${BUCKET}/${key}`
+  const cid = await getCIDFromKey(key)
+
+  return `${GATEWAY_URL}/ipfs/${cid}`
 }
 
 export async function uploadMetadataToS3(metadata: any) {
-  const key = `nft-metadata/${randomUUID()}.json`
+  const key = `${randomUUID()}.json`
 
   const params = {
     Bucket: BUCKET,
     Key: key,
     Body: JSON.stringify(metadata),
     ContentType: 'application/json',
-    ACL: 'public-read',
   }
 
   await s3.putObject(params).promise()
 
-  return `https://s3.filebase.com/${BUCKET}/${key}`
+  const cid = await getCIDFromKey(key)
+
+  return `${GATEWAY_URL}/ipfs/${cid}`
 }
 
 export async function uploadNFTAssetsToS3(file: Express.Multer.File, name: string, description: string, symbol: string) {

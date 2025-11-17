@@ -2,7 +2,6 @@ import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
 import { userRouter } from './routers/user'
-import { webhookRouter } from './routers/webhook'
 import { nftRouter } from './routers/nft'
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000
@@ -28,7 +27,6 @@ app.use(express.json())
 app.use(upload.single('image'))
 
 app.use('/api/user', userRouter)
-app.use('/api/webhook', webhookRouter)
 app.use('/api/nft', nftRouter)
 
 app.get('/health', (req, res) => {

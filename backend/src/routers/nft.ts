@@ -62,6 +62,8 @@ nftRouter.post('/list', async (req: Request, res: Response) => {
       })
     }
 
+    const priceInLamports = BigInt(Math.floor(data.price * 1_000_000_000))
+
     const nft = await db.nFT.create({
       data: {
         name: data.title,
@@ -70,18 +72,49 @@ nftRouter.post('/list', async (req: Request, res: Response) => {
         ownerId: wallet.id,
         metadataUri: data.metadataUri,
         mint: data.mintAddress,
-        price: data.price,
+        price: priceInLamports,
         image: data.imageUrl,
       },
     })
 
     return res.status(201).json({
       message: 'NFT listed successfully',
-      nft,
+      nft: {
+        ...nft,
+        price: Number(nft.price) / 1_000_000_000,
+      },
       transactionSignature: data.transactionSignature,
     })
   } catch (error) {
     console.error('NFT listing error:', error)
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+  }
+})
+
+nftRouter.get('/all', async (req: Request, res: Response) => {
+  try {
+    const nfts = await db.nFT.findMany({
+      where: {
+        listed: true,
+      },
+      include: {
+        owner: true,
+      },
+    })
+
+    const serializedNfts = nfts.map((nft) => ({
+      ...nft,
+      price: Number(nft.price) / 1_000_000_000,
+    }))
+
+    return res.status(200).json({
+      message: 'NFTs retrieved successfully',
+      nfts: serializedNfts,
+    })
+  } catch (error) {
     return res.status(500).json({
       message: 'Internal server error',
       error: error instanceof Error ? error.message : 'Unknown error',
