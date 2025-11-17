@@ -1,28 +1,20 @@
 import { Router, type Request, type Response } from 'express'
-import { createNFTSchema } from '../lib/types'
 import { uploadNFTAssetsToS3 } from '../lib/nft-storage'
 import { db } from '../lib/db'
-import { ListNft } from '../lib/nft-actions'
-import { mintNFT } from '../lib/mint'
-import * as anchor from '@coral-xyz/anchor'
+import { z } from 'zod'
+import { ListNFTSchema, metadataSchema } from '../lib/types'
 
 export const nftRouter = Router()
 
-nftRouter.post('/list', async (req: Request, res: Response) => {
+nftRouter.post('/upload', async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({
         message: 'Image file is required',
       })
     }
-    const {
-      data,
-      success,
-      error: validationError,
-    } = createNFTSchema.safeParse({
-      ...req.body,
-      image: req.file,
-    })
+
+    const { data, success, error: validationError } = metadataSchema.safeParse(req.body)
 
     if (!success) {
       return res.status(400).json({
@@ -30,6 +22,34 @@ nftRouter.post('/list', async (req: Request, res: Response) => {
         errors: validationError?.issues,
       })
     }
+
+    const uploadedAssets = await uploadNFTAssetsToS3(req.file, data.title, data.description, data.symbol)
+
+    return res.status(200).json({
+      message: 'Assets uploaded successfully',
+      metadataUri: uploadedAssets.metadataUrl,
+      imageUrl: uploadedAssets.imageUrl,
+    })
+  } catch (error) {
+    console.error('Upload error:', error)
+    return res.status(500).json({
+      message: 'Failed to upload assets',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+  }
+})
+
+nftRouter.post('/list', async (req: Request, res: Response) => {
+  try {
+    const { data, success, error: validationError } = ListNFTSchema.safeParse(req.body)
+
+    if (!success) {
+      return res.status(400).json({
+        message: 'Invalid request body',
+        errors: validationError?.issues,
+      })
+    }
+
     const wallet = await db.user.findUnique({
       where: {
         publicKey: data.pubKey,
@@ -42,76 +62,26 @@ nftRouter.post('/list', async (req: Request, res: Response) => {
       })
     }
 
-    let uploadedAssets
-    try {
-      uploadedAssets = await uploadNFTAssetsToS3(req.file, data.title, data.description, data.symbol)
-    } catch (uploadError) {
-      console.error('S3 upload failed:', uploadError)
-      return res.status(500).json({
-        message: 'Failed to upload NFT assets to storage',
-        error: uploadError instanceof Error ? uploadError.message : 'Unknown error',
-      })
-    }
-
-    let mintAddress
-    try {
-      const program = anchor.workspace.Shaft
-      if (!program) {
-        throw new Error('Anchor program not initialized')
-      }
-
-      mintAddress = await mintNFT(
-        wallet.publicKey,
-        data.title,
-        data.symbol,
-        uploadedAssets.metadataUrl,
-      )
-    } catch (mintError) {
-      console.error('NFT minting failed:', mintError)
-      return res.status(500).json({
-        message: 'Failed to mint NFT on-chain',
-        error: mintError instanceof Error ? mintError.message : 'Unknown error',
-      })
-    }
-
-    let listingResult
-    try {
-      const anchorWallet = {
-        publicKey: new anchor.web3.PublicKey(wallet.publicKey),
-        signTransaction: async (tx: any) => tx,
-        signAllTransactions: async (txs: any[]) => txs,
-      }
-
-      listingResult = await ListNft(anchorWallet as anchor.Wallet, data.price, mintAddress.toString())
-    } catch (listError) {
-      console.error('NFT listing failed:', listError)
-      return res.status(500).json({
-        message: 'NFT minted but listing failed',
-        mintAddress: mintAddress.toString(),
-        error: listError instanceof Error ? listError.message : 'Unknown error',
-      })
-    }
-
     const nft = await db.nFT.create({
       data: {
         name: data.title,
         symbol: data.symbol,
         listed: true,
         ownerId: wallet.id,
-        metadataUri: uploadedAssets.metadataUrl,
-        mint: mintAddress.toString(),
+        metadataUri: data.metadataUri,
+        mint: data.mintAddress,
         price: data.price,
-        image: uploadedAssets.imageUrl,
+        image: data.imageUrl,
       },
     })
 
     return res.status(201).json({
       message: 'NFT listed successfully',
       nft,
-      transactionSignature: listingResult.transactionSignature,
+      transactionSignature: data.transactionSignature,
     })
   } catch (error) {
-    console.error('NFT creation error:', error)
+    console.error('NFT listing error:', error)
     return res.status(500).json({
       message: 'Internal server error',
       error: error instanceof Error ? error.message : 'Unknown error',

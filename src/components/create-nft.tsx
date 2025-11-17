@@ -9,8 +9,17 @@ import Image from 'next/image'
 import { api } from '@/lib/axios'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import { mintNFT } from '@/lib/mint-nft'
+import { listNFT } from '@/lib/list-nft'
+import { useAnchorProvider } from './solana/solana-provider'
 
-interface CreateNFTResponse {
+interface UploadResponse {
+  message: string
+  metadataUri: string
+  imageUrl: string
+}
+
+interface ListNFTResponse {
   message: string
   nft: {
     id: string
@@ -25,13 +34,16 @@ interface CreateNFTResponse {
 }
 
 export function Create() {
-  const { publicKey, connected } = useWallet()
+  const wallet = useWallet()
+  const { publicKey, connected } = wallet
+  const provider = useAnchorProvider()
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [symbol, setSymbol] = useState('')
+  const [currentStep, setCurrentStep] = useState<'idle' | 'uploading' | 'minting' | 'listing'>('idle')
 
   const createNFTMutation = useMutation({
     mutationFn: async () => {
@@ -43,20 +55,49 @@ export function Create() {
         throw new Error('Image file is required')
       }
 
+      setCurrentStep('uploading')
+      toast.loading('Uploading image and metadata...', { id: 'nft-creation' })
+      
       const formData = new FormData()
       formData.append('image', imageFile)
       formData.append('title', title)
       formData.append('description', description)
-      formData.append('price', price)
       formData.append('symbol', symbol)
-      formData.append('pubKey', publicKey.toString())
 
-      const response = await api.post<CreateNFTResponse>('/api/nft/list', formData)
+      const uploadResponse = await api.post<UploadResponse>('/api/nft/upload', formData)
+      const { metadataUri, imageUrl } = uploadResponse.data
 
-      return response.data
+      setCurrentStep('minting')
+      toast.loading('Please approve minting transaction in your wallet...', { id: 'nft-creation' })
+      
+      const mintAddress = await mintNFT(wallet, title, symbol, metadataUri)
+      
+      toast.loading('NFT minted! Now listing on marketplace...', { id: 'nft-creation' })
+
+      setCurrentStep('listing')
+      toast.loading('Please approve listing transaction in your wallet...', { id: 'nft-creation' })
+      
+      const transactionSignature = await listNFT(provider, mintAddress, parseFloat(price))
+      
+      toast.loading('Saving NFT to database...', { id: 'nft-creation' })
+
+      const listResponse = await api.post<ListNFTResponse>('/api/nft/list', {
+        pubKey: publicKey.toString(),
+        mintAddress,
+        price: parseFloat(price),
+        title,
+        symbol,
+        metadataUri,
+        imageUrl,
+        transactionSignature,
+      })
+
+      return listResponse.data
     },
     onSuccess: (data) => {
-      toast.success('NFT created successfully!', {
+      setCurrentStep('idle')
+      toast.success('NFT created and listed successfully!', {
+        id: 'nft-creation',
         description: `Mint: ${data.nft.mint.substring(0, 10)}...`,
       })
 
@@ -68,12 +109,14 @@ export function Create() {
       setSymbol('')
     },
     onError: (error) => {
+      setCurrentStep('idle')
       if (error instanceof Error) {
         toast.error('Failed to create NFT', {
+          id: 'nft-creation',
           description: error.message,
         })
       } else {
-        toast.error('An unexpected error occurred')
+        toast.error('An unexpected error occurred', { id: 'nft-creation' })
       }
     },
   })
@@ -239,13 +282,17 @@ export function Create() {
             <button
               onClick={handleCreate}
               disabled={!imageFile || !title || !price || !connected || isLoading}
-              className="w-full mt-6 px-8 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-6 px-8 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
-                <span>
-                  <Loader2 className="animate-spin" />
-                  Creating NFT...
-                </span>
+                <>
+                  <Loader2 className="animate-spin h-4 w-4" />
+                  <span>
+                    {currentStep === 'uploading' && 'Uploading assets...'}
+                    {currentStep === 'minting' && 'Waiting for signature...'}
+                    {currentStep === 'listing' && 'Listing on marketplace...'}
+                  </span>
+                </>
               ) : (
                 'Create NFT'
               )}
