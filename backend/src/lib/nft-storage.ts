@@ -11,18 +11,17 @@ const s3 = new AWS.S3({
 
 const BUCKET = process.env.S3_BUCKET!
 
-export async function uploadImageToS3(file: File) {
-  const arrayBuffer = await file.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
+export async function uploadImageToS3(file: Express.Multer.File) {
+  const buffer = file.buffer
 
-  const fileExt = file.name.split('.').pop() || 'png'
+  const fileExt = file.originalname.split('.').pop() || 'png'
   const key = `nft-images/${randomUUID()}.${fileExt}`
 
   const params = {
     Bucket: BUCKET,
     Key: key,
     Body: buffer,
-    ContentType: file.type || 'image/png',
+    ContentType: file.mimetype || 'image/png',
     ACL: 'public-read',
   }
 
@@ -47,7 +46,7 @@ export async function uploadMetadataToS3(metadata: any) {
   return `https://s3.filebase.com/${BUCKET}/${key}`
 }
 
-export async function uploadNFTAssetsToS3(file: File, name: string, description: string, symbol: string) {
+export async function uploadNFTAssetsToS3(file: Express.Multer.File, name: string, description: string, symbol: string) {
   const imageUrl = await uploadImageToS3(file)
 
   const metadata = {

@@ -44,7 +44,7 @@ nftRouter.post('/list', async (req: Request, res: Response) => {
 
     let uploadedAssets
     try {
-      uploadedAssets = await uploadNFTAssetsToS3(req.file as any, data.title, data.description, data.symbol)
+      uploadedAssets = await uploadNFTAssetsToS3(req.file, data.title, data.description, data.symbol)
     } catch (uploadError) {
       console.error('S3 upload failed:', uploadError)
       return res.status(500).json({

@@ -2,16 +2,81 @@
 
 import { useState } from 'react'
 import { motion } from 'motion/react'
+import { useMutation } from '@tanstack/react-query'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { UploadZone } from './uploadzone'
 import Image from 'next/image'
+import { api } from '@/lib/axios'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+
+interface CreateNFTResponse {
+  message: string
+  nft: {
+    id: string
+    name: string
+    symbol: string
+    mint: string
+    price: number
+    image: string
+    metadataUri: string
+  }
+  transactionSignature: string
+}
 
 export function Create() {
+  const { publicKey, connected } = useWallet()
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [symbol, setSymbol] = useState('')
+
+  const createNFTMutation = useMutation({
+    mutationFn: async () => {
+      if (!publicKey) {
+        throw new Error('Wallet not connected')
+      }
+
+      if (!imageFile) {
+        throw new Error('Image file is required')
+      }
+
+      const formData = new FormData()
+      formData.append('image', imageFile)
+      formData.append('title', title)
+      formData.append('description', description)
+      formData.append('price', price)
+      formData.append('symbol', symbol)
+      formData.append('pubKey', publicKey.toString())
+
+      const response = await api.post<CreateNFTResponse>('/api/nft/list', formData)
+
+      return response.data
+    },
+    onSuccess: (data) => {
+      toast.success('NFT created successfully!', {
+        description: `Mint: ${data.nft.mint.substring(0, 10)}...`,
+      })
+
+      setImageFile(null)
+      setImagePreview(null)
+      setTitle('')
+      setDescription('')
+      setPrice('')
+      setSymbol('')
+    },
+    onError: (error) => {
+      if (error instanceof Error) {
+        toast.error('Failed to create NFT', {
+          description: error.message,
+        })
+      } else {
+        toast.error('An unexpected error occurred')
+      }
+    },
+  })
 
   const handleImageChange = (file: File | null) => {
     setImageFile(file)
@@ -27,8 +92,31 @@ export function Create() {
   }
 
   const handleCreate = () => {
-    console.log({ title, description, price, symbol, imageFile })
+    if (!connected) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    const priceNum = parseFloat(price)
+    if (isNaN(priceNum) || priceNum <= 0) {
+      toast.error('Please enter a valid price')
+      return
+    }
+
+    if (!title.trim()) {
+      toast.error('Please enter a title')
+      return
+    }
+
+    if (!symbol.trim()) {
+      toast.error('Please enter a symbol')
+      return
+    }
+
+    createNFTMutation.mutate()
   }
+
+  const isLoading = createNFTMutation.isPending
 
   return (
     <div className="min-h-screen bg-background dark:bg-background">
@@ -71,7 +159,8 @@ export function Create() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter artwork title"
-                className="w-full px-4 py-3 bg-transparent border border-border focus:border-foreground outline-none transition-colors text-foreground placeholder:text-muted-foreground"
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-transparent border border-border focus:border-foreground outline-none transition-colors text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             <div>
@@ -81,7 +170,8 @@ export function Create() {
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value)}
                 placeholder="Enter symbol for your nft"
-                className="w-full px-4 py-3 bg-transparent border border-border focus:border-foreground outline-none transition-colors text-foreground placeholder:text-muted-foreground"
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-transparent border border-border focus:border-foreground outline-none transition-colors text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             <div>
@@ -91,7 +181,8 @@ export function Create() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your artwork"
                 rows={4}
-                className="w-full px-4 py-3 bg-transparent border border-border focus:border-foreground outline-none transition-colors resize-none text-foreground placeholder:text-muted-foreground"
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-transparent border border-border focus:border-foreground outline-none transition-colors resize-none text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             <div>
@@ -102,7 +193,8 @@ export function Create() {
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-4 py-3 pr-16 bg-transparent border border-border focus:border-foreground outline-none transition-colors text-foreground placeholder:text-muted-foreground"
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 pr-16 bg-transparent border border-border focus:border-foreground outline-none transition-colors text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">SOL</span>
               </div>
@@ -146,10 +238,17 @@ export function Create() {
             </div>
             <button
               onClick={handleCreate}
-              disabled={!imageFile || !title || !price}
+              disabled={!imageFile || !title || !price || !connected || isLoading}
               className="w-full mt-6 px-8 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create NFT
+              {isLoading ? (
+                <span>
+                  <Loader2 className="animate-spin" />
+                  Creating NFT...
+                </span>
+              ) : (
+                'Create NFT'
+              )}
             </button>
           </motion.div>
         </div>
