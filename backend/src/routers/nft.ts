@@ -121,3 +121,47 @@ nftRouter.get('/all', async (req: Request, res: Response) => {
     })
   }
 })
+
+nftRouter.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    if (!id) {
+      return res.status(400).json({
+        message: 'Invalid ID',
+      })
+    }
+
+    const nft = await db.nFT.findUnique({
+      where: {
+        id,
+      },
+    })
+
+    if (!nft) {
+      return res.status(404).json({
+        message: 'NFT not found',
+      })
+    }
+
+    const owner = await db.user.findUnique({
+      where: {
+        id: nft.ownerId,
+      },
+    })
+
+    return res.status(200).json({
+      message: 'NFT retrieved successfully',
+      nft: {
+        ...nft,
+        price: Number(nft.price) / 1_000_000_000,
+      },
+      owner,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+  }
+})

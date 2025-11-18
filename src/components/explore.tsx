@@ -1,11 +1,11 @@
 'use client'
 
 import { motion } from 'motion/react'
-import { FilterBar } from './filter-bar'
 import { NFTCard } from './nft-card'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/axios'
 import { Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 interface NFT {
   id: string
@@ -56,8 +56,7 @@ export function Explore() {
             Discover exceptional digital art from creators around the world.
           </p>
         </motion.div>
-        <FilterBar />
-        
+
         {isLoading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -79,15 +78,16 @@ export function Explore() {
         {data && data.nfts.length > 0 && (
           <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {data.nfts.map((nft, index) => (
-              <NFTCard
-                key={nft.id}
-                id={nft.id}
-                image={nft.image}
-                title={nft.name}
-                artist={nft.owner.publicKey.slice(0, 4) + '...' + nft.owner.publicKey.slice(-4)}
-                price={`${nft.price} SOL`}
-                index={index}
-              />
+              <Link key={nft.id} prefetch href={`/explore/${nft.id}`}>
+                <NFTCard
+                  id={nft.id}
+                  image={nft.image}
+                  title={nft.name}
+                  artist={nft.owner.publicKey.slice(0, 4) + '...' + nft.owner.publicKey.slice(-4)}
+                  price={`${nft.price} SOL`}
+                  index={index}
+                />
+              </Link>
             ))}
           </div>
         )}
