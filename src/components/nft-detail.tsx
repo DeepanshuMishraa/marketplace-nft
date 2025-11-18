@@ -1,9 +1,11 @@
 'use client'
 import { motion } from 'motion/react'
 import { Loader2 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/axios'
 import { useWallet } from '@solana/wallet-adapter-react'
+import { buyNFT } from '@/lib/buy-nft'
+import { toast } from 'sonner'
 
 export function NFTDetail({ id }: { id: string }) {
   const { isLoading, error, data } = useQuery({
@@ -14,7 +16,39 @@ export function NFTDetail({ id }: { id: string }) {
     },
   })
 
-  const { publicKey } = useWallet()
+  const wallet = useWallet()
+  const { publicKey, connected, connect } = wallet
+  const queryClient = useQueryClient()
+
+  const buyMutation = useMutation({
+    mutationFn: async () => {
+      if (!connected) {
+        await connect()
+      }
+
+      if (!publicKey) {
+        throw new Error('Wallet not connected')
+      }
+
+      const signature = await buyNFT(wallet, nft.mint, owner.publicKey)
+
+      const response = await api.post(`/api/nft/buy/${id}`, {
+        pubKey: publicKey.toString(),
+        transactionSignature: signature,
+      })
+
+      return response.data
+    },
+    onSuccess: () => {
+      toast.success('NFT purchased successfully!')
+      queryClient.invalidateQueries({ queryKey: ['nft', id] })
+      queryClient.invalidateQueries({ queryKey: ['nfts'] })
+    },
+    onError: (error: any) => {
+      console.log(error)
+      toast.error(error?.response?.data?.message || 'Failed to purchase NFT')
+    },
+  })
 
   const nft = data?.nft
   const owner = data?.owner
@@ -96,9 +130,20 @@ export function NFTDetail({ id }: { id: string }) {
               </div>
 
               <div className="flex gap-3">
-                {owner.publicKey !== publicKey?.toString() && (
-                  <button className="flex-1 px-6 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors">
-                    Buy Now
+                {owner.publicKey !== publicKey?.toString() && nft.listed && (
+                  <button
+                    onClick={() => buyMutation.mutate()}
+                    disabled={buyMutation.isPending}
+                    className="flex-1 px-6 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {buyMutation.isPending ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="animate-spin h-4 w-4" />
+                        Processing...
+                      </span>
+                    ) : (
+                      'Buy Now'
+                    )}
                   </button>
                 )}
               </div>

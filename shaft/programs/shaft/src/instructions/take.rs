@@ -1,5 +1,6 @@
 use crate::state::Escrow;
 use anchor_lang::prelude::*;
+use anchor_lang::system_program::{transfer, Transfer};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{
@@ -47,9 +48,17 @@ pub struct Buy<'info> {
 
 impl<'info> Buy<'info> {
     pub fn buy_nft(&mut self) -> Result<()> {
-        **self.taker.to_account_info().try_borrow_mut_lamports()? -= self.escrow.price;
+        let transfer_accounts = Transfer {
+            from: self.taker.to_account_info(),
+            to: self.maker.to_account_info(),
+        };
 
-        **self.maker.to_account_info().try_borrow_mut_lamports()? += self.escrow.price;
+        let cpi_context = CpiContext::new(
+            self.system_program.to_account_info(),
+            transfer_accounts,
+        );
+
+        transfer(cpi_context, self.escrow.price)?;
 
         let maker_key = self.maker.key();
         let nft_key = self.mint_nft.key();
@@ -63,14 +72,14 @@ impl<'info> Buy<'info> {
 
         let signer_seeds = &[&seeds[..]];
 
-        let transfer_accounts = TransferChecked {
+        let transfer_nft_accounts = TransferChecked {
             from: self.vault_nft.to_account_info(),
             to: self.taker_ata_nft.to_account_info(),
             authority: self.escrow.to_account_info(),
             mint: self.mint_nft.to_account_info(),
         };
 
-        let cpi_ctx = CpiContext::new(self.token_program.to_account_info(), transfer_accounts)
+        let cpi_ctx = CpiContext::new(self.token_program.to_account_info(), transfer_nft_accounts)
             .with_signer(signer_seeds);
 
         transfer_checked(cpi_ctx, 1, 0)?;

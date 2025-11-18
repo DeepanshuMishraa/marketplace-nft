@@ -1,7 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import { uploadNFTAssetsToS3 } from '../lib/nft-storage'
 import { db } from '../lib/db'
-import { z } from 'zod'
 import { ListNFTSchema, metadataSchema } from '../lib/types'
 
 export const nftRouter = Router()
@@ -162,6 +161,80 @@ nftRouter.get('/:id', async (req: Request, res: Response) => {
     return res.status(500).json({
       message: 'Internal server error',
       error: error instanceof Error ? error.message : 'Unknown error',
+    })
+  }
+})
+
+nftRouter.post('/buy/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const { pubKey, transactionSignature } = req.body
+
+    if (!pubKey || !transactionSignature) {
+      return res.status(400).json({
+        message: 'Public key and transaction signature are required',
+      })
+    }
+
+    const user = await db.user.findUnique({
+      where: {
+        publicKey: pubKey,
+      },
+    })
+
+    if (!user) {
+      return res.status(400).json({
+        message: 'User not found, Connect your wallet first',
+      })
+    }
+
+    const nft = await db.nFT.findUnique({
+      where: {
+        id,
+      },
+    })
+
+    if (!nft) {
+      return res.status(404).json({
+        message: 'NFT not found',
+      })
+    }
+
+    if (!nft.listed) {
+      return res.status(400).json({
+        message: 'NFT is not listed for sale',
+      })
+    }
+
+    if (user.id === nft.ownerId) {
+      return res.status(400).json({
+        message: 'You cannot buy your own NFT',
+      })
+    }
+
+    const updatedNft = await db.nFT.update({
+      where: {
+        id,
+      },
+      data: {
+        ownerId: user.id,
+        listed: false,
+      },
+    })
+
+    return res.status(200).json({
+      message: 'NFT bought successfully',
+      nft: {
+        ...updatedNft,
+        price: Number(updatedNft.price) / 1_000_000_000,
+      },
+      owner: user,
+      transactionSignature,
+    })
+  } catch (err) {
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: err instanceof Error ? err.message : 'Unknown error',
     })
   }
 })
