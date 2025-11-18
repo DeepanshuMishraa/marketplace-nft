@@ -32,6 +32,7 @@ export function Explore() {
       return response.data
     },
   })
+  
 
   return (
     <div className="min-h-screen bg-background dark:bg-background">

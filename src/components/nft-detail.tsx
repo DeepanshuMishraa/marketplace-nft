@@ -1,12 +1,11 @@
 'use client'
-import { useState } from 'react'
 import { motion } from 'motion/react'
-import { Heart, Share2, MoreVertical, Clock, TrendingUp, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/axios'
+import { useWallet } from '@solana/wallet-adapter-react'
 
 export function NFTDetail({ id }: { id: string }) {
-  const [isFavorited, setIsFavorited] = useState(false)
   const { isLoading, error, data } = useQuery({
     queryKey: ['nft', id],
     queryFn: async () => {
@@ -14,6 +13,8 @@ export function NFTDetail({ id }: { id: string }) {
       return response.data
     },
   })
+
+  const { publicKey } = useWallet()
 
   const nft = data?.nft
   const owner = data?.owner
@@ -95,9 +96,11 @@ export function NFTDetail({ id }: { id: string }) {
               </div>
 
               <div className="flex gap-3">
-                <button className="flex-1 px-6 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors">
-                  Buy Now
-                </button>
+                {owner.publicKey !== publicKey?.toString() && (
+                  <button className="flex-1 px-6 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors">
+                    Buy Now
+                  </button>
+                )}
               </div>
             </div>
             {nft.metadataUri && (
