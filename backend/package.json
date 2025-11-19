@@ -5,10 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "db:push": "bunx prisma db push",
-    "db:migrate": "bunx prisma migrate dev",
-    "db:generate": "bunx prisma generate",
-    "db:studio": "bunx prisma studio"
+    "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate dev",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio"
   },
   "devDependencies": {
     "@types/bun": "latest"
