@@ -1,9 +1,9 @@
 import { WalletContextState } from '@solana/wallet-adapter-react'
 import * as anchor from '@coral-xyz/anchor'
 import { Program, AnchorProvider } from '@coral-xyz/anchor'
-import { Connection, PublicKey, Transaction } from '@solana/web3.js'
+import { Connection, PublicKey } from '@solana/web3.js'
 import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import idl from '../../shaft/target/idl/shaft.json'
+import idl from '@/lib/shaft.json'
 
 const PROGRAM_ID = new PublicKey('3vsCLZj4ACRSXBqKd8DLfunaMsPG26CXBC19ApzNKksp')
 const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
@@ -15,14 +15,14 @@ export async function buyNFT(wallet: WalletContextState, mintAddress: string, se
 
   const connection = new Connection(
     process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-    'confirmed'
+    'confirmed',
   )
 
-  const provider = new AnchorProvider(
-    connection,
-    wallet as any,
-    { commitment: 'confirmed', skipPreflight: false, preflightCommitment: 'confirmed' }
-  )
+  const provider = new AnchorProvider(connection, wallet as any, {
+    commitment: 'confirmed',
+    skipPreflight: false,
+    preflightCommitment: 'confirmed',
+  })
 
   const program = new Program(idl as any, provider)
 
@@ -32,7 +32,7 @@ export async function buyNFT(wallet: WalletContextState, mintAddress: string, se
 
   const [escrow] = PublicKey.findProgramAddressSync(
     [Buffer.from('escrow'), maker.toBuffer(), mint.toBuffer()],
-    PROGRAM_ID
+    PROGRAM_ID,
   )
 
   const takerAtaNft = getAssociatedTokenAddressSync(mint, taker, false, TOKEN_PROGRAM_ID)
