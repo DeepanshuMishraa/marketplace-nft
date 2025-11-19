@@ -1,14 +1,14 @@
 import * as anchor from '@coral-xyz/anchor'
 import { Program } from '@coral-xyz/anchor'
-import type { Shaft } from '../../shaft/target/types/shaft'
-import idl from '../../shaft/target/idl/shaft.json'
+import type { Shaft } from '@/lib/shaft'
+import idl from '@/lib/shaft.json'
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token'
 
 export async function listNFT(
   provider: anchor.AnchorProvider,
   mintAddress: string,
-  priceInSol: number
+  priceInSol: number,
 ): Promise<string> {
   try {
     const program = new Program<Shaft>(idl as any, provider)
@@ -22,21 +22,15 @@ export async function listNFT(
       maker,
       false,
       TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
+      ASSOCIATED_TOKEN_PROGRAM_ID,
     )
 
     const [escrow] = PublicKey.findProgramAddressSync(
       [Buffer.from('escrow'), maker.toBuffer(), mintNft.toBuffer()],
-      program.programId
+      program.programId,
     )
 
-    const vaultNft = getAssociatedTokenAddressSync(
-      mintNft,
-      escrow,
-      true,
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    )
+    const vaultNft = getAssociatedTokenAddressSync(mintNft, escrow, true, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID)
 
     const transactionSignature = await program.methods
       .listNft(new anchor.BN(priceInLamports))
