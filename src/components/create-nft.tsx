@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react'
 import { mintNFT } from '@/lib/mint-nft'
 import { listNFT } from '@/lib/list-nft'
 import { useAnchorProvider } from './solana/solana-provider'
+import { useRouter } from 'next/navigation'
 
 interface UploadResponse {
   message: string
@@ -37,6 +38,7 @@ export function Create() {
   const wallet = useWallet()
   const { publicKey, connected } = wallet
   const provider = useAnchorProvider()
+  const router = useRouter()
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -57,7 +59,7 @@ export function Create() {
 
       setCurrentStep('uploading')
       toast.loading('Uploading image and metadata...', { id: 'nft-creation' })
-      
+
       const formData = new FormData()
       formData.append('image', imageFile)
       formData.append('title', title)
@@ -69,16 +71,16 @@ export function Create() {
 
       setCurrentStep('minting')
       toast.loading('Please approve minting transaction in your wallet...', { id: 'nft-creation' })
-      
+
       const mintAddress = await mintNFT(wallet, title, symbol, metadataUri)
-      
+
       toast.loading('NFT minted! Now listing on marketplace...', { id: 'nft-creation' })
 
       setCurrentStep('listing')
       toast.loading('Please approve listing transaction in your wallet...', { id: 'nft-creation' })
-      
+
       const transactionSignature = await listNFT(provider, mintAddress, parseFloat(price))
-      
+
       toast.loading('Saving NFT to database...', { id: 'nft-creation' })
 
       const listResponse = await api.post<ListNFTResponse>('/api/nft/list', {
@@ -100,6 +102,8 @@ export function Create() {
         id: 'nft-creation',
         description: `Mint: ${data.nft.mint.substring(0, 10)}...`,
       })
+
+      router.push(`/nft/${data.nft.id}`)
 
       setImageFile(null)
       setImagePreview(null)

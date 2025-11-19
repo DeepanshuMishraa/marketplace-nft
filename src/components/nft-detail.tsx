@@ -133,7 +133,7 @@ export function NFTDetail({ id }: { id: string }) {
                 {owner.publicKey !== publicKey?.toString() && nft.listed && (
                   <button
                     onClick={() => buyMutation.mutate()}
-                    disabled={buyMutation.isPending}
+                    disabled={!connected || buyMutation.isPending}
                     className="flex-1 px-6 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {buyMutation.isPending ? (
@@ -141,6 +141,8 @@ export function NFTDetail({ id }: { id: string }) {
                         <Loader2 className="animate-spin h-4 w-4" />
                         Processing...
                       </span>
+                    ) : !connected ? (
+                      'Connect your wallet first'
                     ) : (
                       'Buy Now'
                     )}
