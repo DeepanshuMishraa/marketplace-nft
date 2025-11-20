@@ -14,8 +14,8 @@
     "start": "next start",
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
-    "db:generate": "npx dlx prisma generate",
-    "db:studio": "npx dlx prisma studio"
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio"
   },
   "displayName": "Web3js Counter",
   "usecase": "Legacy",
