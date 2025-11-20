@@ -12,10 +12,10 @@
     "format:check": "prettier --check .",
     "lint": "next lint",
     "start": "next start",
-    "db:push": "pnpm dlx prisma db push",
-    "db:migrate": "pnpm dlx prisma migrate dev",
-    "db:generate": "pnpm dlx prisma generate",
-    "db:studio": "pnpm dlx prisma studio"
+    "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate dev",
+    "db:generate": "npx dlx prisma generate",
+    "db:studio": "npx dlx prisma studio"
   },
   "displayName": "Web3js Counter",
   "usecase": "Legacy",
