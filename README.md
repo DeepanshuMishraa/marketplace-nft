@@ -7,7 +7,7 @@ Shaft is a Simple NFT MarketPlace where you can trade nfts with people very easi
 - You can Buy  NFTs 
 - You can view the NFTs owned by you 
 
-[https://shaft-marketplace.vercel.app](Live Demo)
+https://shaft-marketplace.vercel.app : (Live Demo)
 
 ## Setup Locally 
 
