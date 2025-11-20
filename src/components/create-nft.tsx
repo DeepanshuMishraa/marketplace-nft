@@ -103,7 +103,7 @@ export function Create() {
         description: `Mint: ${data.nft.mint.substring(0, 10)}...`,
       })
 
-      router.push(`/nft/${data.nft.id}`)
+      router.push(`/explore/${data.nft.id}`)
 
       setImageFile(null)
       setImagePreview(null)
