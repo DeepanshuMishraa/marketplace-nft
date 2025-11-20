@@ -1,3 +1,44 @@
-## NFT Marketplace
+## Shaft - NFT MarketPlace 
 
-List you nft for a certain price and other can buy it . It uses an escrow based approach when you list your nft it is locked in a escrow vault and when someone buys it the sol goes to you and the buyer gets the nft and then the escrow is closed.
+Shaft is a Simple NFT MarketPlace where you can trade nfts with people very easily. Just List your nft for a certain price and make it open for the world to buy. 
+
+- You can List NFTs 
+- You can explore NFTs 
+- You can Buy  NFTs 
+- You can view the NFTs owned by you 
+
+[https://shaft-marketplace.vercel.app](Live Demo)
+
+## Setup Locally 
+
+### Client (Next Js) 
+
+```
+git clone git@github.com:DeepanshuMishraa/marketplace-nft.git
+
+cd marketplace-nft 
+
+pnpm install 
+
+cp .env.example .env 
+
+fill out the env variables 
+
+pnpm db:migrate 
+pnpm db:generate 
+pnpm db:push 
+
+pnpm dev
+```
+
+## Program 
+
+```
+cd shaft
+
+anchor build 
+
+anchor deploy 
+
+``` 
+
