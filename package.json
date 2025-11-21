@@ -17,11 +17,11 @@
     "db:generate": "npx prisma generate",
     "db:studio": "npx prisma studio"
   },
-  "displayName": "Web3js Counter",
+  "displayName": "Shaft",
   "usecase": "Legacy",
   "description": "Next.js, Tailwind, @solana/web3.js, Wallet Adapter, Anchor Counter program",
   "keywords": [
-    "anchor-counter",
+    "Shaft",
     "nextjs",
     "react",
     "solana-web3js",
