@@ -52,3 +52,7 @@ anchor deploy
 - As a Creator i want to list my NFTs on shaft with a set price , so that whoever wants to buy them can purchase them instantly without manual negotiation and trust issues.
 
 - As a Buyer , i want to see all the different NFTs and purchase them instantly for the fixed listed price so that i can get it without contacting the seller manually and trusting that i will get the NFT once i pay the price.
+
+
+## Arch Diagram 
+

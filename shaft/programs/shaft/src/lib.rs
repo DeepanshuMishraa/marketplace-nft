@@ -1,11 +1,9 @@
 #![allow(clippy::result_large_err)]
 
 use anchor_lang::prelude::*;
-pub mod events;
 pub mod instructions;
 pub mod state;
 
-use events::*;
 use instructions::*;
 
 declare_id!("3vsCLZj4ACRSXBqKd8DLfunaMsPG26CXBC19ApzNKksp");
@@ -19,26 +17,12 @@ pub mod shaft {
 
         ctx.accounts.deposit_nft()?;
 
-        emit!(ListingCreated {
-            maker: ctx.accounts.maker.key(),
-            mint_nft: ctx.accounts.mint_nft.key(),
-            price,
-            escrow: ctx.accounts.escrow.key(),
-        });
-
         Ok(())
     }
 
     pub fn buy(ctx: Context<Buy>) -> Result<()> {
         ctx.accounts.buy_nft()?;
 
-        emit!(ListingFinished {
-            maker: ctx.accounts.maker.key(),
-            taker: ctx.accounts.taker.key(),
-            price: ctx.accounts.escrow.price,
-            mint_nft: ctx.accounts.mint_nft.key(),
-        });
-        
         Ok(())
     }
 }
