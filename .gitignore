@@ -52,3 +52,4 @@ test-ledger
 **/*.rs.bk
 
 /generated/prisma
+.gitattributes
